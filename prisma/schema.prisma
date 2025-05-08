@@ -1,79 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["fullTextSearch", "mongoDb"]
+model Type {
+id String @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  products Product[]
+  createdOn  DateTime @default(now())
+  updatedOn  DateTime @updatedAt
+  createdBy  String
+  updatedBy  String
 }
 
-enum UserRole {
-  SUPER_ADMIN
-  ADMIN
-  USER
+model Color {
+id String @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  productColors ProductColor[]
+  createdOn  DateTime @default(now())
+  updatedOn  DateTime @updatedAt
+  createdBy  String
+  updatedBy  String
 }
 
-model User {
-  id        String        @id @default(auto()) @map("_id") @db.ObjectId
-  email     String        @unique
-  name      String?
-  role      UserRole      @default(USER)
-  scans     Environment[] @relation("ScannedBy")
-  markings  Marking[]
-  comments  Comment[]
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+model ProductColor {
+id String @id @default(auto()) @map("_id") @db.ObjectId
+  color     Color    @relation(fields: [colorId], references: [id])
+  colorId   String
+  image     String
+  model     String // URL to the model
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
 }
 
-model Environment {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  description String?
-  location    String?
-  scans       Scan[]    @relation("EnvironmentScans") 
-  scannedBy   User      @relation("ScannedBy", fields: [scannedById], references: [id])
-  scannedById String    @db.ObjectId
-  markings    Marking[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+model Product {
+id String @id @default(auto()) @map("_id") @db.ObjectId
+  image          String
+  name           String
+  type           Type           @relation(fields: [typeId], references: [id])
+  typeId         String
+  description    String?
+  productColors  ProductColor[] // One-to-many relation
+  createdOn      DateTime       @default(now())
+  updatedOn      DateTime       @updatedAt
+  createdBy      String
+  updatedBy      String
 }
 
-model Scan {
-  id            String      @id @default(auto()) @map("_id") @db.ObjectId
-  scanName      String
-  fileUrl       String
-  originX       Float
-  originY       Float
-  originZ       Float
-  environment   Environment @relation("EnvironmentScans", fields: [environmentId], references: [id]) // ✅ same name
-  environmentId String      @db.ObjectId
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-}
-
-model Marking {
-  id            String      @id @default(auto()) @map("_id") @db.ObjectId
-  environment   Environment @relation(fields: [environmentId], references: [id])
-  environmentId String      @db.ObjectId
-  createdBy     User        @relation(fields: [createdById], references: [id])
-  createdById   String      @db.ObjectId
-  x             Float
-  y             Float
-  z             Float
-  url           String?
-  metadata      Json?
-  remark        String?
-  comments      Comment[]
-  createdAt     DateTime    @default(now())
-}
-
-model Comment {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  content   String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @db.ObjectId
-  marking   Marking  @relation(fields: [markingId], references: [id])
-  markingId String   @db.ObjectId
-  createdAt DateTime @default(now())
+model JournalEntry {
+id String @id @default(auto()) @map("_id") @db.ObjectId
+  entry     String
+  createdOn DateTime @default(now())
 }

@@ -1,26 +1,31 @@
-const allowedOrigins = ['http://yourfrontend.com', 'http://anothertrusted.com'];
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://mysticalfe.vercel.app',
+];
 
 interface CorsOptions {
   origin: (
     origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void
+    callback: (err: Error | null, allow: boolean) => void
   ) => void;
   methods: string[];
   allowedHeaders: string[];
-  credentials: boolean;
+  credentials: boolean; // Allow credentials (cookies, authorization headers, etc.)
 }
 
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    if (allowedOrigins.indexOf(origin || '') !== -1 || !origin) {
-      callback(null, true); // Allows requests from allowedOrigins or no origin (non-browser clients)
+    console.log('[CORS]', origin);
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error(`CORS blocked: ${origin}`), false);
     }
   },
-  methods: ['GET', 'POST', 'PUT'],
+  methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, // Allows cookies and auth headers
+  credentials: true,
 };
 
 export { corsOptions };
