@@ -23,7 +23,7 @@ const corsOptions: CorsOptions = {
       callback(new Error(`CORS blocked: ${origin}`), false);
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'OPTIONS', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 };

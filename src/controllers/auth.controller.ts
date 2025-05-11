@@ -14,16 +14,12 @@ export const login = async (req: Request, res: Response) => {
     console.log(email, password);
     const user = await prisma.user.findUnique({ where: { email } });
 
-    console.log(user);
-
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const hash = await bcrypt.hash('admin123', 10);
-    console.log(hash);
+    const isMatch = await bcrypt.compare('admin123', user.password);
 
-    const isMatch = await bcrypt.compare('admin123', '');
     console.log(isMatch);
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid credentials' });
