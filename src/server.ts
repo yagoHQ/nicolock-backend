@@ -18,6 +18,8 @@ const app = express();
 // Middleware
 app.use(cors(corsOptions));
 app.use(helmet());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(
   morgan('tiny', {
     stream: { write: (message) => logger.info(message.trim()) },
