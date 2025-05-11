@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { uploadStreamToCloudinary } from '../utils/cloudinary';
+import { createJournalEntry } from '../utils/journal';
 
 const prisma = new PrismaClient();
 
@@ -9,20 +10,12 @@ export const getAllProductColors = async (_req: Request, res: Response) => {
   try {
     const colors = await prisma.productColor.findMany({
       include: {
-        color: {
-          select: {
-            name: true,
-          },
-        },
+        color: { select: { name: true } },
         product: {
           select: {
             image: true,
             name: true,
-            type: {
-              select: {
-                name: true,
-              },
-            },
+            type: { select: { name: true } },
           },
         },
       },
@@ -33,9 +26,9 @@ export const getAllProductColors = async (_req: Request, res: Response) => {
   }
 };
 
-//add product color
+// POST /product-colors - Add product color
 export const addProductColor = async (req: Request, res: Response) => {
-  const { productId, colorId } = req.body;
+  const { productId, productName, colorId, createdBy } = req.body;
 
   try {
     let imageUrl = '';
@@ -69,6 +62,11 @@ export const addProductColor = async (req: Request, res: Response) => {
       },
     });
 
+    await createJournalEntry(
+      `ADMIN added a new color variant to product ${productName}`,
+      createdBy
+    );
+
     res.status(201).json(newColor);
   } catch (error) {
     console.error('[addProductColor]', error);
@@ -76,27 +74,30 @@ export const addProductColor = async (req: Request, res: Response) => {
   }
 };
 
-// UPDATE product color
+// PUT /product-colors/:id - Update product color
 export const updateProductColor = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { colorId, productId } = req.body;
+  const { colorId, productName, productId, updatedBy } = req.body;
 
   try {
     let updateData: any = { colorId, productId };
 
-    if (req.files && 'image' in req.files) {
-      const imageBuffer = (req.files as any).image[0].buffer;
+    const files = req.files as {
+      image?: Express.Multer.File[];
+      model?: Express.Multer.File[];
+    };
+
+    if (files?.image?.[0]) {
       const imageUrl = await uploadStreamToCloudinary(
-        imageBuffer,
+        files.image[0].buffer,
         'productColors'
       );
       updateData.image = imageUrl;
     }
 
-    if (req.files && 'model' in req.files) {
-      const modelBuffer = (req.files as any).model[0].buffer;
+    if (files?.model?.[0]) {
       const modelUrl = await uploadStreamToCloudinary(
-        modelBuffer,
+        files.model[0].buffer,
         'productModels'
       );
       updateData.model = modelUrl;
@@ -107,6 +108,11 @@ export const updateProductColor = async (req: Request, res: Response) => {
       data: updateData,
     });
 
+    await createJournalEntry(
+      `ADMIN updated product color for product ${productName}`,
+      updatedBy
+    );
+
     res.status(200).json(updated);
   } catch (err) {
     console.error('[updateProductColor]', err);
@@ -114,19 +120,36 @@ export const updateProductColor = async (req: Request, res: Response) => {
   }
 };
 
-// DELETE product color
+// DELETE /product-colors/:id
 export const deleteProductColor = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const deletedBy = req.body.deletedBy || 'Admin';
+  const productName = req.body.productName;
+
+  console.log(req.body);
+
+  console.log(deletedBy, productName);
 
   try {
+    const color = await prisma.productColor.findUnique({ where: { id } });
+
+    if (!color)
+      return res.status(404).json({ error: 'Product color not found' });
+
     await prisma.productColor.delete({ where: { id } });
+
+    await createJournalEntry(
+      `ADMIN deleted product color of product ${productName}`,
+      deletedBy
+    );
+
     res.status(200).json({ message: 'Product color deleted' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete product color' });
   }
 };
 
-//GET product colors by product ID
+// GET /product-colors/by-product/:productId
 export const getProductColorsByProductId = async (
   req: Request,
   res: Response
@@ -135,9 +158,7 @@ export const getProductColorsByProductId = async (
 
   try {
     const productColors = await prisma.productColor.findMany({
-      where: {
-        productId,
-      },
+      where: { productId },
       include: {
         color: {
           select: {

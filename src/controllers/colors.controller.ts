@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { createJournalEntry } from '../utils/journal';
 
 const prisma = new PrismaClient();
 
@@ -31,7 +32,6 @@ export const getColorById = async (req: Request, res: Response) => {
 export const createColor = async (req: Request, res: Response) => {
   const { name, createdBy } = req.body;
   try {
-    console.log('Creating color with data:', req.body);
     const newColor = await prisma.color.create({
       data: {
         name,
@@ -39,6 +39,9 @@ export const createColor = async (req: Request, res: Response) => {
         updatedBy: createdBy,
       },
     });
+
+    await createJournalEntry(`ADMIN created color ${name}`, createdBy);
+
     res.status(201).json(newColor);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create color' });
@@ -57,6 +60,9 @@ export const updateColor = async (req: Request, res: Response) => {
         updatedBy,
       },
     });
+
+    await createJournalEntry(`ADMIN updated color to ${name}`, updatedBy);
+
     res.status(200).json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update color' });
@@ -66,8 +72,16 @@ export const updateColor = async (req: Request, res: Response) => {
 // DELETE /colors/:id - Delete a color
 export const deleteColor = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const deletedBy = req.body.deletedBy || 'Admin';
+
   try {
+    const color = await prisma.color.findUnique({ where: { id } });
+    if (!color) return res.status(404).json({ error: 'Color not found' });
+
     await prisma.color.delete({ where: { id } });
+
+    await createJournalEntry(`ADMIN deleted color ${color.name}`, deletedBy);
+
     res.status(200).json({ message: 'Color deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete color' });

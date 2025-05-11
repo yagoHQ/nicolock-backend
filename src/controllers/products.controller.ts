@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { uploadStreamToCloudinary } from '../utils/cloudinary';
+import { createJournalEntry } from '../utils/journal';
 
 const prisma = new PrismaClient();
 
-// GET /products - View all products with their type and colors
+// GET /products
 export const getAllProducts = async (_req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany({
@@ -23,7 +24,7 @@ export const getAllProducts = async (_req: Request, res: Response) => {
   }
 };
 
-// POST /products - Add a product with Cloudinary upload
+// POST /products
 export const createProduct = async (req: Request, res: Response) => {
   try {
     const { name, description, typeId, createdBy } = req.body;
@@ -50,6 +51,8 @@ export const createProduct = async (req: Request, res: Response) => {
       },
     });
 
+    await createJournalEntry(`ADMIN created new product ${name}`, createdBy);
+
     res.status(201).json(newProduct);
   } catch (error) {
     console.error('[createProduct]', error);
@@ -57,7 +60,7 @@ export const createProduct = async (req: Request, res: Response) => {
   }
 };
 
-// PUT /products/:id - Update a product with Cloudinary upload
+// PUT /products/:id
 export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, description, typeId, updatedBy } = req.body;
@@ -86,6 +89,8 @@ export const updateProduct = async (req: Request, res: Response) => {
       },
     });
 
+    await createJournalEntry(`ADMIN updated product to ${name}`, updatedBy);
+
     res.status(200).json(updatedProduct);
   } catch (err) {
     console.error('[updateProduct]', err);
@@ -93,14 +98,27 @@ export const updateProduct = async (req: Request, res: Response) => {
   }
 };
 
-// DELETE /products/:id - Delete a product
+// DELETE /products/:id
 export const deleteProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const deletedBy = req.body.deletedBy || 'Admin'; // fallback if not passed
+
   try {
+    const product = await prisma.product.findUnique({ where: { id } });
+
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
     await prisma.productColor.deleteMany({ where: { productId: id } });
     await prisma.product.delete({ where: { id } });
+
+    await createJournalEntry(
+      `ADMIN deleted product ${product.name}`,
+      deletedBy
+    );
+
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (err) {
+    console.error('[deleteProduct]', err);
     res.status(500).json({ error: 'Failed to delete product' });
   }
 };

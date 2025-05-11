@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { createJournalEntry } from '../utils/journal';
 
 const prisma = new PrismaClient();
 
@@ -24,6 +25,9 @@ export const addType = async (req: Request, res: Response) => {
         updatedBy: createdBy,
       },
     });
+
+    await createJournalEntry(`ADMIN created a new type ${name}`, createdBy);
+
     res.status(201).json(newType);
   } catch (err) {
     res.status(500).json({ error: 'Failed to create type' });
@@ -39,6 +43,9 @@ export const updateType = async (req: Request, res: Response) => {
       where: { id },
       data: { name, updatedBy },
     });
+
+    await createJournalEntry(`ADMIN updated type to ${name}`, updatedBy);
+
     res.status(200).json(updated);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update type' });
@@ -48,10 +55,13 @@ export const updateType = async (req: Request, res: Response) => {
 // DELETE /types/:id
 export const deleteType = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const deletedBy = req.body.deletedBy || 'Admin';
+
   try {
-    await prisma.type.delete({
-      where: { id },
-    });
+    const deleted = await prisma.type.delete({ where: { id } });
+
+    await createJournalEntry(`ADMIN deleted type ${deleted.name}`, deletedBy);
+
     res.status(200).json({ message: 'Type deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete type' });
