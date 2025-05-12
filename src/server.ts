@@ -5,7 +5,6 @@ import morgan from 'morgan';
 import { prisma } from './utils/prisma';
 import dotenv from 'dotenv';
 import { corsOptions } from './utils/corsOptions';
-import { rateLimiter } from './utils/rateLimiter';
 import { logger } from './utils/logger';
 import router from './routes/routes';
 
@@ -25,7 +24,6 @@ app.use(
     stream: { write: (message) => logger.info(message.trim()) },
   })
 );
-app.use(rateLimiter);
 app.use(express.json());
 
 // Health Check Route
