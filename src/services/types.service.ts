@@ -56,7 +56,7 @@ export const deleteProductByTypeId = async (id: string, deletedBy: string) => {
   return deleted;
 };
 
-export const deleteProductsByTypeId = async (
+export const getproductsByTypeId = async (
   typeId: string,
   deletedBy: string
 ) => {
@@ -64,9 +64,5 @@ export const deleteProductsByTypeId = async (
     where: { typeId },
     select: { id: true, name: true },
   });
-
-  for (const product of products) {
-    deleteProductById(product.id, deletedBy);
-  }
   return products.length;
 };

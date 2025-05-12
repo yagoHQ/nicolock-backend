@@ -5,7 +5,7 @@ import {
   createType,
   updateTypeById,
   deleteTypeById,
-  deleteProductByTypeId,
+  getproductsByTypeId,
 } from '../services/types.service';
 
 // GET /types
@@ -46,7 +46,12 @@ export const deleteType = async (req: Request, res: Response) => {
   const { id } = req.params;
   const deletedBy = req.body.deletedBy || 'Admin';
   try {
-    const deletedProduct = await deleteProductByTypeId(id, deletedBy);
+    const count = await getproductsByTypeId(id, deletedBy);
+    if (count != 0) {
+      return res
+        .status(400)
+        .json({ error: 'Cannot delete type as products are mapped with type' });
+    }
     const deleted = await deleteTypeById(id, deletedBy);
     res.status(200).json({ message: `Deleted type ${deleted.name}` });
   } catch (err) {
