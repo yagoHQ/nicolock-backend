@@ -1,23 +1,17 @@
+// controllers/product.controller.ts
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { uploadStreamToCloudinary } from '../utils/cloudinary';
-import { createJournalEntry } from '../utils/journal';
-
-const prisma = new PrismaClient();
+import {
+  fetchAllProducts,
+  createNewProduct,
+  updateProductById,
+  deleteProductById,
+  getDashboardStats,
+} from '../services/products.service';
 
 // GET /products
 export const getAllProducts = async (_req: Request, res: Response) => {
   try {
-    const products = await prisma.product.findMany({
-      include: {
-        type: {
-          select: {
-            name: true,
-            createdOn: true,
-          },
-        },
-      },
-    });
+    const products = await fetchAllProducts();
     res.status(200).json(products);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch products' });
@@ -26,34 +20,17 @@ export const getAllProducts = async (_req: Request, res: Response) => {
 
 // POST /products
 export const createProduct = async (req: Request, res: Response) => {
+  const { name, description, typeId, createdBy } = req.body;
+
   try {
-    const { name, description, typeId, createdBy } = req.body;
-
-    let uploadedImageUrl = '';
-    if (req.file && req.file.buffer) {
-      uploadedImageUrl = await uploadStreamToCloudinary(
-        req.file.buffer,
-        'products'
-      );
-    }
-
-    const newProduct = await prisma.product.create({
-      data: {
-        name,
-        image: uploadedImageUrl,
-        description,
-        typeId,
-        createdBy,
-        updatedBy: createdBy,
-      },
-      include: {
-        type: true,
-      },
-    });
-
-    await createJournalEntry(`ADMIN created new product ${name}`, createdBy);
-
-    res.status(201).json(newProduct);
+    const product = await createNewProduct(
+      name,
+      description,
+      typeId,
+      createdBy,
+      req.file
+    );
+    res.status(201).json(product);
   } catch (error) {
     console.error('[createProduct]', error);
     res.status(500).json({ error: 'Failed to create product' });
@@ -66,34 +43,16 @@ export const updateProduct = async (req: Request, res: Response) => {
   const { name, description, typeId, updatedBy } = req.body;
 
   try {
-    let dataToUpdate: any = {
+    const updated = await updateProductById(
+      id,
       name,
       description,
       typeId,
       updatedBy,
-    };
-
-    if (req.file && req.file.buffer) {
-      const uploadedImage = await uploadStreamToCloudinary(
-        req.file.buffer,
-        'products'
-      );
-      dataToUpdate.image = uploadedImage;
-    }
-
-    const updatedProduct = await prisma.product.update({
-      where: { id },
-      data: dataToUpdate,
-      include: {
-        type: true,
-      },
-    });
-
-    await createJournalEntry(`ADMIN updated product to ${name}`, updatedBy);
-
-    res.status(200).json(updatedProduct);
+      req.file
+    );
+    res.status(200).json(updated);
   } catch (err) {
-    console.error('[updateProduct]', err);
     res.status(500).json({ error: 'Failed to update product' });
   }
 };
@@ -101,49 +60,23 @@ export const updateProduct = async (req: Request, res: Response) => {
 // DELETE /products/:id
 export const deleteProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const deletedBy = req.body.deletedBy || 'Admin'; // fallback if not passed
+  const deletedBy = req.body.deletedBy || 'Admin';
 
   try {
-    const product = await prisma.product.findUnique({ where: { id } });
-
-    if (!product) return res.status(404).json({ error: 'Product not found' });
-
-    await prisma.productColor.deleteMany({ where: { productId: id } });
-    await prisma.product.delete({ where: { id } });
-
-    await createJournalEntry(
-      `ADMIN deleted product ${product.name}`,
-      deletedBy
-    );
+    const deleted = await deleteProductById(id, deletedBy);
+    if (!deleted) return res.status(404).json({ error: 'Product not found' });
 
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (err) {
-    console.error('[deleteProduct]', err);
     res.status(500).json({ error: 'Failed to delete product' });
   }
 };
 
-// GET /dashboard - summary + recent updates
+// GET /dashboard
 export const getDashboardData = async (_req: Request, res: Response) => {
   try {
-    const [totalProducts, totalColors, recentUpdates] = await Promise.all([
-      prisma.product.count(),
-      prisma.color.count(),
-      prisma.journalEntry.findMany({
-        orderBy: { createdOn: 'desc' },
-        take: 5,
-        select: {
-          createdOn: true,
-          entry: true,
-        },
-      }),
-    ]);
-
-    res.status(200).json({
-      totalProducts,
-      totalColors,
-      recentUpdates,
-    });
+    const data = await getDashboardStats();
+    res.status(200).json(data);
   } catch (error) {
     console.error('[getDashboardData]', error);
     res.status(500).json({ error: 'Failed to load dashboard data' });

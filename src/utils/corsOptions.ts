@@ -10,7 +10,7 @@ interface CorsOptions {
   ) => void;
   methods: string[];
   allowedHeaders: string[];
-  credentials: boolean; // Allow credentials (cookies, authorization headers, etc.)
+  credentials: boolean;
 }
 
 const corsOptions: CorsOptions = {
