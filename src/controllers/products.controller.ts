@@ -122,3 +122,30 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to delete product' });
   }
 };
+
+// GET /dashboard - summary + recent updates
+export const getDashboardData = async (_req: Request, res: Response) => {
+  try {
+    const [totalProducts, totalColors, recentUpdates] = await Promise.all([
+      prisma.product.count(),
+      prisma.color.count(),
+      prisma.journalEntry.findMany({
+        orderBy: { createdOn: 'desc' },
+        take: 5,
+        select: {
+          createdOn: true,
+          entry: true,
+        },
+      }),
+    ]);
+
+    res.status(200).json({
+      totalProducts,
+      totalColors,
+      recentUpdates,
+    });
+  } catch (error) {
+    console.error('[getDashboardData]', error);
+    res.status(500).json({ error: 'Failed to load dashboard data' });
+  }
+};
