@@ -79,10 +79,9 @@ export const getProductColorsByProductId = async (
   req: Request,
   res: Response
 ) => {
-  const { productId } = req.params;
-
+  const { id } = req.params;
   try {
-    const data = await getProductColorsByProduct(productId);
+    const data = await getProductColorsByProduct(id);
     res.status(200).json(data);
   } catch (error) {
     res
