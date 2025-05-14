@@ -1,6 +1,7 @@
 const allowedOrigins = [
   'http://localhost:5173',
   'https://nickolockfe.vercel.app',
+  'https://nicolockufe.vercel.app',
 ];
 
 interface CorsOptions {
