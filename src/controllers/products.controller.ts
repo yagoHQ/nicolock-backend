@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import {
   fetchAllProducts,
   createNewProduct,
+  fetchProductsById,
   updateProductById,
   deleteProductById,
   getDashboardStats,
@@ -44,6 +45,17 @@ export const createProduct = async (req: Request, res: Response) => {
     }
     console.error('[createProduct]', error);
     res.status(500).json({ error: 'Failed to create product' });
+  }
+};
+
+// GET /products/:id
+export const getProductById = async (_req: Request, res: Response) => {
+  try {
+    const { id } = _req.params;
+    const products = await fetchProductsById(id);
+    res.status(200).json(products);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch products' });
   }
 };
 

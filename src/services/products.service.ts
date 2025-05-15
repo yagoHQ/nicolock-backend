@@ -48,6 +48,26 @@ export const createNewProduct = async (
   return product;
 };
 
+export const fetchProductsById = async (id: string) => {
+  const product = await prisma.product.findUnique({
+    where: { id },
+    include: {
+      type: {
+        select: {
+          name: true,
+          createdOn: true,
+        },
+      },
+    },
+  });
+
+  if (!product) {
+    throw new Error(`Product with id "${id}" not found`);
+  }
+
+  return product;
+};
+
 export const updateProductById = async (
   id: string,
   name: string,
