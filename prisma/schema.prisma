@@ -17,7 +17,7 @@ model User {
 
 model Type {
 id String @id @default(auto()) @map("_id") @db.ObjectId
-  name       String
+  name       String   @unique
   products Product[]
   createdOn  DateTime @default(now())
   updatedOn  DateTime @updatedAt
@@ -27,7 +27,7 @@ id String @id @default(auto()) @map("_id") @db.ObjectId
 
 model Color {
 id String @id @default(auto()) @map("_id") @db.ObjectId
-  name       String
+  name       String  @unique
   productColors ProductColor[]
   createdOn  DateTime @default(now())
   updatedOn  DateTime @updatedAt
@@ -43,12 +43,14 @@ id String @id @default(auto()) @map("_id") @db.ObjectId
   model     String // URL to the model
   product   Product @relation(fields: [productId], references: [id])
   productId String
+
+  @@unique([productId, colorId]) 
 }
 
 model Product {
 id String @id @default(auto()) @map("_id") @db.ObjectId
   image          String
-  name           String
+  name           String         @unique
   type           Type           @relation(fields: [typeId], references: [id])
   typeId         String
   description    String?

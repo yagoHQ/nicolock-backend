@@ -7,6 +7,7 @@ import {
   deleteProductById,
   getDashboardStats,
 } from '../services/products.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 // GET /products
 export const getAllProducts = async (_req: Request, res: Response) => {
@@ -32,6 +33,15 @@ export const createProduct = async (req: Request, res: Response) => {
     );
     res.status(201).json(product);
   } catch (error) {
+    if (
+      error instanceof PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      res.status(500).json({
+        error: `Product with name ${name} already exists`,
+      });
+      return;
+    }
     console.error('[createProduct]', error);
     res.status(500).json({ error: 'Failed to create product' });
   }
@@ -53,6 +63,12 @@ export const updateProduct = async (req: Request, res: Response) => {
     );
     res.status(200).json(updated);
   } catch (err) {
+    if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+      res.status(500).json({
+        error: `Product with name ${name} already exists`,
+      });
+      return;
+    }
     res.status(500).json({ error: 'Failed to update product' });
   }
 };

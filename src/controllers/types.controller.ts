@@ -7,6 +7,7 @@ import {
   deleteTypeById,
   getproductsByTypeId,
 } from '../services/types.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 // GET /types
 export const getAllTypes = async (_req: Request, res: Response) => {
@@ -25,6 +26,12 @@ export const addType = async (req: Request, res: Response) => {
     const newType = await createType(name, createdBy);
     res.status(201).json(newType);
   } catch (err) {
+    if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+      res.status(500).json({
+        error: `Type with name ${name} already exists`,
+      });
+      return;
+    }
     res.status(500).json({ error: 'Failed to create type' });
   }
 };
@@ -37,6 +44,12 @@ export const updateType = async (req: Request, res: Response) => {
     const updated = await updateTypeById(id, name, updatedBy);
     res.status(200).json(updated);
   } catch (err) {
+    if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+      res.status(500).json({
+        error: `Type with name ${name} already exists`,
+      });
+      return;
+    }
     res.status(500).json({ error: 'Failed to update type' });
   }
 };

@@ -7,6 +7,7 @@ import {
   updateColorById,
   deleteColorById,
 } from '../services/colors.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 // GET /colors
 export const getAllColors = async (_req: Request, res: Response) => {
@@ -36,6 +37,15 @@ export const createColor = async (req: Request, res: Response) => {
     const newColor = await createNewColor(name, createdBy);
     res.status(201).json(newColor);
   } catch (error) {
+    if (
+      error instanceof PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      res.status(500).json({
+        error: `Product with name ${name} already exists`,
+      });
+      return;
+    }
     res.status(500).json({ error: 'Failed to create color' });
   }
 };
@@ -48,6 +58,15 @@ export const updateColor = async (req: Request, res: Response) => {
     const updated = await updateColorById(id, name, updatedBy);
     res.status(200).json(updated);
   } catch (error) {
+    if (
+      error instanceof PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      res.status(500).json({
+        error: `Product with name ${name} already exists`,
+      });
+      return;
+    }
     res.status(500).json({ error: 'Failed to update color' });
   }
 };
