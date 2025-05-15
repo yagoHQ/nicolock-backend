@@ -38,7 +38,7 @@ export const addProductColor = async (req: Request, res: Response) => {
       error.code === 'P2002'
     ) {
       res.status(500).json({
-        error: `Product with name ${name} already exists`,
+        error: 'Color already exists',
       });
       return;
     }
@@ -50,7 +50,7 @@ export const addProductColor = async (req: Request, res: Response) => {
 // PUT /product-colors/:id
 export const updateProductColor = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { productId, colorId, productName, updatedBy } = req.body;
+  const { productId, colorId, productName, updatedBy, name } = req.body;
 
   try {
     const updated = await updateProductColorById(
@@ -68,7 +68,7 @@ export const updateProductColor = async (req: Request, res: Response) => {
       error.code === 'P2002'
     ) {
       res.status(500).json({
-        error: `Product with name ${name} already exists`,
+        error: `Color already exists`,
       });
       return;
     }
