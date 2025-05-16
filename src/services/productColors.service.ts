@@ -70,11 +70,8 @@ export const updateProductColorById = async (
   updatedBy: string,
   files?: { image?: Express.Multer.File[]; model?: Express.Multer.File[] }
 ) => {
-  const updateData: any = {
-    productId,
-    colorId,
-    updatedBy,
-  };
+  const updateData: any = {};
+  console.log('updateData', updateData);
 
   const imageFile = files?.image?.[0] as S3MulterFile | undefined;
   const modelFile = files?.model?.[0] as S3MulterFile | undefined;
