@@ -26,8 +26,8 @@ export const createNewProduct = async (
   file?: Express.Multer.File
 ) => {
   let uploadedImageUrl = '';
-  if (file?.buffer) {
-    uploadedImageUrl = await uploadStreamToCloudinary(file.buffer, 'products');
+  if (file && 'location' in file && typeof file.location === 'string') {
+    uploadedImageUrl = file.location;
   }
 
   const product = await prisma.product.create({
@@ -76,14 +76,15 @@ export const updateProductById = async (
   updatedBy: string,
   file?: Express.Multer.File
 ) => {
-  const dataToUpdate: any = { name, description, typeId, updatedBy };
+  const dataToUpdate: any = {
+    name,
+    description,
+    typeId,
+    updatedBy,
+  };
 
-  if (file?.buffer) {
-    const uploadedImage = await uploadStreamToCloudinary(
-      file.buffer,
-      'products'
-    );
-    dataToUpdate.image = uploadedImage;
+  if (file && 'location' in file && typeof file.location === 'string') {
+    dataToUpdate.image = file.location;
   }
 
   const updated = await prisma.product.update({

@@ -7,7 +7,7 @@ import {
   getProductColorsByProductId,
 } from '../controllers/productColors.controller';
 
-import { upload } from '../middlewares/multer';
+import { upload } from '../middlewares/upload';
 
 const router = Router();
 

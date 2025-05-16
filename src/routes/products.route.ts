@@ -7,7 +7,7 @@ import {
   deleteProduct,
   getDashboardData,
 } from '../controllers/products.controller';
-import { upload } from '../middlewares/multer';
+import { upload } from '../middlewares/upload';
 
 const router = Router();
 

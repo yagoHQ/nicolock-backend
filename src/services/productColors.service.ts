@@ -4,6 +4,9 @@ import { uploadStreamToCloudinary } from '../utils/cloudinary';
 import { createJournalEntry } from '../utils/journal';
 
 const prisma = new PrismaClient();
+interface S3MulterFile extends Express.Multer.File {
+  location: string;
+}
 
 export const fetchAllProductColors = () => {
   return prisma.productColor.findMany({
@@ -30,18 +33,15 @@ export const addNewProductColor = async (
   let imageUrl = '';
   let modelUrl = '';
 
-  if (files?.image?.[0]) {
-    imageUrl = await uploadStreamToCloudinary(
-      files.image[0].buffer,
-      'productColors'
-    );
+  const imageFile = files?.image?.[0] as S3MulterFile | undefined;
+  const modelFile = files?.model?.[0] as S3MulterFile | undefined;
+
+  if (imageFile?.location) {
+    imageUrl = imageFile.location;
   }
 
-  if (files?.model?.[0]) {
-    modelUrl = await uploadStreamToCloudinary(
-      files.model[0].buffer,
-      'productModels'
-    );
+  if (modelFile?.location) {
+    modelUrl = modelFile.location;
   }
 
   const newColor = await prisma.productColor.create({
@@ -57,6 +57,7 @@ export const addNewProductColor = async (
     `ADMIN added a new color variant to product ${productName}`,
     createdBy
   );
+
   return newColor;
 };
 
@@ -68,20 +69,21 @@ export const updateProductColorById = async (
   updatedBy: string,
   files?: { image?: Express.Multer.File[]; model?: Express.Multer.File[] }
 ) => {
-  const updateData: any = { colorId, productId };
+  const updateData: any = {
+    productId,
+    colorId,
+    updatedBy,
+  };
 
-  if (files?.image?.[0]) {
-    updateData.image = await uploadStreamToCloudinary(
-      files.image[0].buffer,
-      'productColors'
-    );
+  const imageFile = files?.image?.[0] as S3MulterFile | undefined;
+  const modelFile = files?.model?.[0] as S3MulterFile | undefined;
+
+  if (imageFile?.location) {
+    updateData.image = imageFile.location;
   }
 
-  if (files?.model?.[0]) {
-    updateData.model = await uploadStreamToCloudinary(
-      files.model[0].buffer,
-      'productModels'
-    );
+  if (modelFile?.location) {
+    updateData.model = modelFile.location;
   }
 
   const updated = await prisma.productColor.update({
@@ -93,6 +95,7 @@ export const updateProductColorById = async (
     `ADMIN updated product color for product ${productName}`,
     updatedBy
   );
+
   return updated;
 };
 
