@@ -2,6 +2,7 @@
 import { PrismaClient } from '@prisma/client';
 import { uploadStreamToCloudinary } from '../utils/cloudinary';
 import { createJournalEntry } from '../utils/journal';
+import { deleteFromS3, extractS3Key } from '../utils/s3Helpers';
 
 const prisma = new PrismaClient();
 interface S3MulterFile extends Express.Multer.File {
@@ -86,6 +87,15 @@ export const updateProductColorById = async (
     updateData.model = modelFile.location;
   }
 
+  if (updateData.image) {
+    const oldKey = extractS3Key(updateData.image);
+    await deleteFromS3(oldKey);
+  }
+
+  if (updateData.model) {
+    const oldKey = extractS3Key(updateData.model);
+    await deleteFromS3(oldKey);
+  }
   const updated = await prisma.productColor.update({
     where: { id },
     data: updateData,
@@ -107,6 +117,10 @@ export const deleteProductColorById = async (
   const existing = await prisma.productColor.findUnique({ where: { id } });
 
   if (!existing) return null;
+  if (existing.image) {
+    const imageKey = extractS3Key(existing.image);
+    await deleteFromS3(imageKey);
+  }
 
   await prisma.productColor.delete({ where: { id } });
 
