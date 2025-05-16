@@ -50,7 +50,13 @@ export const addProductColor = async (req: Request, res: Response) => {
 // PUT /product-colors/:id
 export const updateProductColor = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { productId, colorId, productName, updatedBy, name } = req.body;
+  const {
+    productId,
+    colorId,
+    productName,
+    updatedBy = 'ADMIN',
+    name,
+  } = req.body;
 
   try {
     const updated = await updateProductColorById(
