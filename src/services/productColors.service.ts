@@ -1,6 +1,5 @@
 // services/productColor.service.ts
 import { PrismaClient } from '@prisma/client';
-import { uploadStreamToCloudinary } from '../utils/cloudinary';
 import { createJournalEntry } from '../utils/journal';
 import { deleteFromS3, extractS3Key } from '../utils/s3Helpers';
 
@@ -131,6 +130,23 @@ export const deleteProductColorById = async (
 export const getProductColorsByProduct = (productId: string) => {
   return prisma.productColor.findMany({
     where: { productId },
+    include: {
+      color: { select: { id: true, name: true } },
+      product: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          type: { select: { name: true } },
+        },
+      },
+    },
+  });
+};
+
+export const getProductColorById = (id: string) => {
+  return prisma.productColor.findUnique({
+    where: { id },
     include: {
       color: { select: { id: true, name: true } },
       product: {

@@ -114,3 +114,17 @@ export const getProductColorsByProductId = async (
       .json({ error: 'Failed to fetch product colors for this product' });
   }
 };
+
+// GET /product-colors/by-product/:productId
+export const getProductColorById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const data = await getProductColorsByProduct(id);
+    if (!data) {
+      return res.status(404).json({ error: 'Product color not found' });
+    }
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch product color' });
+  }
+};
