@@ -6,6 +6,7 @@ import {
   updateProductColorById,
   deleteProductColorById,
   getProductColorsByProduct,
+  getProductColorById as getProductColorByIdService,
 } from '../services/productColors.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
@@ -119,7 +120,7 @@ export const getProductColorsByProductId = async (
 export const getProductColorById = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const data = await getProductColorsByProduct(id);
+    const data = await getProductColorByIdService(id);
     if (!data) {
       return res.status(404).json({ error: 'Product color not found' });
     }
