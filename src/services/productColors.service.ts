@@ -69,29 +69,37 @@ export const updateProductColorById = async (
   updatedBy: string,
   files?: { image?: Express.Multer.File[]; model?: Express.Multer.File[] }
 ) => {
+  const existing = await prisma.productColor.findUnique({
+    where: { id },
+  });
+
+  if (!existing) {
+    throw new Error('Product color not found');
+  }
+
   const updateData: any = {};
-  console.log('updateData', updateData);
 
   const imageFile = files?.image?.[0] as S3MulterFile | undefined;
   const modelFile = files?.model?.[0] as S3MulterFile | undefined;
 
   if (imageFile?.location) {
+    // Delete old image from S3
+    if (existing.image) {
+      const oldImageKey = extractS3Key(existing.image);
+      await deleteFromS3(oldImageKey);
+    }
     updateData.image = imageFile.location;
   }
 
   if (modelFile?.location) {
+    // Delete old model from S3
+    if (existing.model) {
+      const oldModelKey = extractS3Key(existing.model);
+      await deleteFromS3(oldModelKey);
+    }
     updateData.model = modelFile.location;
   }
 
-  if (updateData.image) {
-    const oldKey = extractS3Key(updateData.image);
-    await deleteFromS3(oldKey);
-  }
-
-  if (updateData.model) {
-    const oldKey = extractS3Key(updateData.model);
-    await deleteFromS3(oldKey);
-  }
   const updated = await prisma.productColor.update({
     where: { id },
     data: updateData,
